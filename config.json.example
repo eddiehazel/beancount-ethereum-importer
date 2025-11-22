@@ -1,5 +1,6 @@
 {
     "name": "mainnet",
+    "default_account": "Assets:Crypto:ETH",
     "account_map": {
         "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045": "Assets:Ethereum:0xd8da"
     },

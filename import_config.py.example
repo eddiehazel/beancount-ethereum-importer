@@ -1,10 +1,25 @@
+#!/usr/bin/env python3
+"""Beangulp import configuration for beancount-ethereum.
+
+Usage:
+    python import_config.py identify downloads/
+    python import_config.py extract downloads/ > transactions.beancount
+    python import_config.py extract -e ledger.beancount downloads/ > transactions.beancount
+"""
 import os
 import sys
 
 sys.path.append(os.path.dirname(os.path.realpath(__file__)))
 
+import beangulp
 import beancount_ethereum
 
-CONFIG = [
-    beancount_ethereum.importer.Importer(config_path='config.json'),
+# Define your importers
+importers = [
+    beancount_ethereum.Importer(config_path='config.json'),
 ]
+
+# Run the beangulp CLI if executed as a script
+if __name__ == '__main__':
+    ingest = beangulp.Ingest(importers)
+    ingest()

@@ -20,6 +20,6 @@ setup(
     download_url='https://github.com/xuhcc/beancount-ethereum-importer',
     install_requires=requirements,
     entry_points={'console_scripts': 'beancount-ethereum=beancount_ethereum.__main__:main'},
-    python_requires='>=3.6',  # This is the version beancount requires
-    keyword='Beancount Ethereum'
+    python_requires='>=3.9',  # Required by beancount 3.x
+    keywords=['Beancount', 'Ethereum', 'Crypto', 'Accounting']
 )

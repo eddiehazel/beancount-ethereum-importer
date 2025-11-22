@@ -3,7 +3,7 @@ import json
 import os
 from itertools import groupby
 
-from beancount.ingest.importer import ImporterProtocol
+from beangulp import Importer as BeangulpImporter
 from beancount.core.amount import Amount
 from beancount.core.data import EMPTY_SET, Posting, Transaction, new_metadata
 from beancount.core.number import D
@@ -12,7 +12,7 @@ DEFAULT_CURRENCY = 'ETH'
 MINER = '0xffffffffffffffffffffffffffffffffffffffff'
 
 
-class Importer(ImporterProtocol):
+class Importer(BeangulpImporter):
 
     def __init__(
         self,
@@ -29,9 +29,13 @@ class Importer(ImporterProtocol):
     def name(self) -> str:
         return 'ethereum'
 
-    def identify(self, file) -> bool:
+    def identify(self, filepath: str) -> bool:
         name = self.config['name']
-        return os.path.basename(file.name) == f'{name}.json'
+        return os.path.basename(filepath) == f'{name}.json'
+
+    def account(self, filepath: str) -> str:
+        """Return the primary account associated with this importer."""
+        return self.config.get('default_account', 'Assets:Crypto:ETH')
 
     @property
     def account_map(self) -> dict:
@@ -96,7 +100,7 @@ class Importer(ImporterProtocol):
             posting = None
         return posting, payee
 
-    def extract(self, file, existing_entries=None) -> list:
+    def extract(self, filepath: str, existing_entries=None) -> list:
         # Get list of existing transactions
         existing_txs = []
         if existing_entries is not None:
@@ -105,7 +109,7 @@ class Importer(ImporterProtocol):
                     existing_txs.append(item.meta['txid'])
 
         # Load new transactions
-        with open(file.name, 'r') as _file:
+        with open(filepath, 'r') as _file:
             transactions = json.load(_file)
         entries = []
         sorted_transactions = sorted(

@@ -1,5 +1,11 @@
 # Ethereum transaction importer for Beancount
 
+## Requirements
+
+- Python >= 3.9
+- Beancount 3.x
+- Beangulp
+
 ## Configuration
 
 Example of configuration file: [config.json](config.json.example).
@@ -30,26 +36,40 @@ Download transactions to file:
 beancount-ethereum --config=config.json --output-dir=downloads
 ```
 
-Add importer to import configuration ([example](import_config.py.example)):
+### Importing with Beangulp
 
-```
+Create an import configuration script ([example](import_config.py.example)):
+
+```python
+#!/usr/bin/env python3
+import beangulp
 import beancount_ethereum
 
-CONFIG = [
-    beancount_ethereum.importer.Importer(config_path='config.json'),
+importers = [
+    beancount_ethereum.Importer(config_path='config.json'),
 ]
+
+if __name__ == '__main__':
+    ingest = beangulp.Ingest(importers)
+    ingest()
 ```
 
-Check with `bean-identify`:
+Check with identify:
 
 ```
-bean-identify import_config.py downloads
+python import_config.py identify downloads/
 ```
 
-Import transactions with `bean-extract`:
+Import transactions with extract:
 
 ```
-bean-extract -e test.beancount import_config.py downloads
+python import_config.py extract downloads/
+```
+
+To deduplicate against existing entries:
+
+```
+python import_config.py extract -e ledger.beancount downloads/
 ```
 
 ## Deploy
