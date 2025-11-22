@@ -1,164 +1,244 @@
 # Ethereum Transaction Importer for Beancount
 
-A [Beancount](https://beancount.github.io/) importer for Ethereum blockchain transactions. Downloads transaction data from [Etherscan](https://etherscan.io/) or compatible block explorers (like [Blockscout](https://blockscout.com/)) and imports them into your Beancount ledger.
+Import your Ethereum blockchain transactions into [Beancount](https://beancount.github.io/), a powerful plain-text accounting system. This tool downloads your transaction history from Etherscan and converts it into Beancount format for tracking your crypto portfolio.
 
-## Features
+## What This Tool Does
 
-- Downloads normal transactions, internal transactions, and ERC-20 token transfers
-- Supports multiple wallet addresses
-- Automatic transaction fee tracking
-- Currency mapping for stablecoins and wrapped tokens
-- Deduplication against existing ledger entries
-- Compatible with Etherscan API and Blockscout API
+1. **Downloads** your Ethereum transaction history from Etherscan (or similar block explorers)
+2. **Converts** those transactions into Beancount's plain-text accounting format
+3. **Tracks** ETH transfers, gas fees, and ERC-20 token movements automatically
 
-## Requirements
+---
 
-- Python >= 3.9
-- Beancount 3.x
-- Beangulp 0.2.0+
+## Complete Beginner's Guide: Zero to Hero
 
-## Installation
+This guide assumes you're starting from scratch. We'll set up everything step by step.
 
-### From PyPI
+### Prerequisites
 
-```bash
-pip install beancount-ethereum
-```
+You need:
+- **Python 3.9+** installed on your computer
+- **An Ethereum wallet address** you want to track
+- **An Etherscan API key** (free to create)
 
-### From Source
+### Step 1: Install Python Dependencies
 
-```bash
-git clone https://github.com/xuhcc/beancount-ethereum-importer.git
-cd beancount-ethereum-importer
-pip install -e .
-```
-
-### Running Locally Without pip Install
-
-If you prefer to run directly from the repository:
-
-1. Install only the dependencies:
+Open your terminal and install the required packages:
 
 ```bash
 pip install beancount beangulp
 ```
 
-2. Clone and enter the repository:
+### Step 2: Get the Code
+
+Clone this repository:
 
 ```bash
 git clone https://github.com/xuhcc/beancount-ethereum-importer.git
 cd beancount-ethereum-importer
 ```
 
-3. Create your config file:
+Your folder now looks like this:
+```
+beancount-ethereum-importer/
+├── beancount_ethereum/      # The importer code
+├── config.json.example      # Example configuration
+├── import_config.py.example # Example import script
+└── ...
+```
+
+### Step 3: Get Your Etherscan API Key
+
+1. Go to [https://etherscan.io/register](https://etherscan.io/register)
+2. Create a free account
+3. Go to [https://etherscan.io/myapikey](https://etherscan.io/myapikey)
+4. Click "Add" to create a new API key
+5. Copy the API key (looks like: `ABCD1234EFGH5678...`)
+
+### Step 4: Create Your Configuration File
+
+Copy the example config:
 
 ```bash
 cp config.json.example config.json
-# Edit config.json with your settings
 ```
 
-4. Download transactions:
-
-```bash
-python -m beancount_ethereum --config=config.json --output-dir=downloads
-```
-
-5. Run the importer with PYTHONPATH:
-
-```bash
-# Identify files
-PYTHONPATH=. python import_config.py identify downloads/
-
-# Extract transactions
-PYTHONPATH=. python import_config.py extract downloads/
-
-# Extract with deduplication
-PYTHONPATH=. python import_config.py extract -e ledger.beancount downloads/
-```
-
-## Configuration
-
-Create a `config.json` file based on the example:
+Now edit `config.json` with your details. Here's a complete example:
 
 ```json
 {
-    "name": "mainnet",
-    "default_account": "Assets:Crypto:ETH",
+    "name": "my-ethereum",
+    "default_account": "Assets:Crypto:Ethereum",
     "account_map": {
-        "0xYourWalletAddress1": "Assets:Ethereum:Wallet1",
-        "0xYourWalletAddress2": "Assets:Ethereum:Wallet2"
+        "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045": "Assets:Crypto:Ethereum:MainWallet"
     },
-    "fee_account": "Expenses:Crypto:Fees",
-    "expenses_account": "Expenses:Crypto:Other",
-    "income_account": "Income:Crypto:Other",
+    "fee_account": "Expenses:Crypto:GasFees",
+    "expenses_account": "Expenses:Crypto:Purchases",
+    "income_account": "Income:Crypto:Received",
     "block_explorer_api_url": "https://api.etherscan.io/api",
-    "block_explorer_api_key": "YOUR_API_KEY",
-    "block_explorer_api_request_delay": 0.2,
-    "base_currency": "ETH",
-    "currency_map": {
-        "USDC": {"commodity": "USD", "account_suffix": "USDC"},
-        "WETH": {"commodity": "ETH"}
-    }
+    "block_explorer_api_key": "YOUR_API_KEY_HERE",
+    "block_explorer_api_request_delay": 0.25,
+    "base_currency": "ETH"
 }
 ```
 
-### Configuration Options
+**Replace these values:**
+- `0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045` → Your actual wallet address
+- `YOUR_API_KEY_HERE` → Your Etherscan API key from Step 3
 
-| Option | Required | Description |
-|--------|----------|-------------|
-| `name` | Yes | Name for the output file (e.g., `mainnet` creates `mainnet.json`) |
-| `default_account` | No | Default account for beangulp (default: `Assets:Crypto:ETH`) |
-| `account_map` | Yes | Map of wallet addresses to Beancount account names |
-| `fee_account` | Yes | Account for transaction fees |
-| `expenses_account` | Yes | Account for outgoing transactions to unknown addresses |
-| `income_account` | Yes | Account for incoming transactions from unknown addresses |
-| `block_explorer_api_url` | Yes | API endpoint URL |
-| `block_explorer_api_key` | No | API key (required for Etherscan) |
-| `block_explorer_api_request_delay` | No | Delay between API requests in seconds (default: 0) |
-| `base_currency` | No | Base currency symbol (default: `ETH`) |
-| `currency_map` | No | Map token symbols to commodities and account suffixes |
+**Understanding the config:**
 
-### Getting an API Key
+| Field | What It Means | Example |
+|-------|---------------|---------|
+| `name` | Output filename (creates `my-ethereum.json`) | `"my-ethereum"` |
+| `account_map` | Maps your wallet addresses to Beancount account names | See above |
+| `fee_account` | Where gas fees are recorded | `"Expenses:Crypto:GasFees"` |
+| `expenses_account` | Where outgoing ETH goes (to unknown addresses) | `"Expenses:Crypto:Purchases"` |
+| `income_account` | Where incoming ETH comes from (unknown sources) | `"Income:Crypto:Received"` |
+| `block_explorer_api_key` | Your Etherscan API key | `"ABCD1234..."` |
+| `block_explorer_api_request_delay` | Wait time between API calls (seconds) | `0.25` |
 
-- **Etherscan**: Register at https://etherscan.io/register and create an API key
-- **Blockscout**: Usually no API key required
+### Step 5: Download Your Transactions
 
-### Supported Block Explorers
-
-- Etherscan (Ethereum Mainnet): `https://api.etherscan.io/api`
-- Arbiscan (Arbitrum): `https://api.arbiscan.io/api`
-- Polygonscan (Polygon): `https://api.polygonscan.com/api`
-- Blockscout (various chains): Check their documentation for API URLs
-
-## Usage
-
-### Step 1: Download Transactions
-
-Download transactions from the blockchain:
-
-```bash
-beancount-ethereum --config=config.json --output-dir=downloads
-```
-
-Or without installation:
+Run the downloader to fetch your transaction history:
 
 ```bash
 python -m beancount_ethereum --config=config.json --output-dir=downloads
 ```
 
-This creates a JSON file (e.g., `downloads/mainnet.json`) with all transactions.
+This creates a `downloads/` folder with a JSON file containing all your transactions:
+```
+downloads/
+└── my-ethereum.json    # Your transaction data
+```
 
-### Step 2: Create Import Configuration
+### Step 6: Create the Import Script
 
-Create an `import_config.py` file:
+Copy the example import script:
+
+```bash
+cp import_config.py.example import_config.py
+```
+
+The file should look like this:
 
 ```python
 #!/usr/bin/env python3
+"""
+Beangulp import configuration for Ethereum transactions.
+
+Usage:
+    python import_config.py identify downloads/
+    python import_config.py extract downloads/
+"""
+import os
+import sys
+
+# Add current directory to Python path (needed when running without pip install)
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
+import beangulp
+import beancount_ethereum
+
+# Create the importer with your config
+# max_delta=365 means: import transactions from the last 365 days
+importers = [
+    beancount_ethereum.Importer(
+        config_path='config.json',
+        max_delta=365
+    ),
+]
+
+# This runs the beangulp command-line interface
+if __name__ == '__main__':
+    ingest = beangulp.Ingest(importers)
+    ingest()
+```
+
+### Step 7: Test That Everything Works
+
+First, verify the importer recognizes your downloaded file:
+
+```bash
+python import_config.py identify downloads/
+```
+
+You should see output like:
+```
+/path/to/downloads/my-ethereum.json
+  ethereum    Assets:Crypto:Ethereum
+```
+
+### Step 8: Extract Your Transactions
+
+Now convert your transactions to Beancount format:
+
+```bash
+python import_config.py extract downloads/
+```
+
+This prints Beancount transactions to your terminal. To save them to a file:
+
+```bash
+python import_config.py extract downloads/ > ethereum-transactions.beancount
+```
+
+### Step 9: View Your Transactions
+
+Open `ethereum-transactions.beancount` to see your transactions:
+
+```beancount
+2024-01-15 * "0x1a2b3c4d..."
+  txid: "0xabc123def456..."
+  Assets:Crypto:Ethereum:MainWallet:ETH    -1.5 ETH
+  Expenses:Crypto:Purchases                 1.5 ETH
+  Assets:Crypto:Ethereum:MainWallet:ETH    -0.002 ETH
+  Expenses:Crypto:GasFees                   0.002 ETH
+```
+
+**What this means:**
+- You sent 1.5 ETH to address `0x1a2b3c4d...`
+- You paid 0.002 ETH in gas fees
+- The `txid` metadata links back to the blockchain transaction
+
+---
+
+## Complete Working Example
+
+Here's a full example with a real (public) Ethereum address:
+
+### 1. Create `config.json`:
+
+```json
+{
+    "name": "vitalik",
+    "default_account": "Assets:Crypto:Ethereum",
+    "account_map": {
+        "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045": "Assets:Crypto:Ethereum:Vitalik"
+    },
+    "fee_account": "Expenses:Crypto:GasFees",
+    "expenses_account": "Expenses:Crypto:Sent",
+    "income_account": "Income:Crypto:Received",
+    "block_explorer_api_url": "https://api.etherscan.io/api",
+    "block_explorer_api_key": "YOUR_API_KEY",
+    "block_explorer_api_request_delay": 0.25,
+    "base_currency": "ETH"
+}
+```
+
+### 2. Create `import_config.py`:
+
+```python
+#!/usr/bin/env python3
+import os
+import sys
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
 import beangulp
 import beancount_ethereum
 
 importers = [
-    beancount_ethereum.Importer(config_path='config.json'),
+    beancount_ethereum.Importer(config_path='config.json', max_delta=30),
 ]
 
 if __name__ == '__main__':
@@ -166,120 +246,250 @@ if __name__ == '__main__':
     ingest()
 ```
 
-### Step 3: Identify Files
+### 3. Download and import:
 
-Verify the importer recognizes your downloaded files:
+```bash
+# Download transactions
+python -m beancount_ethereum --config=config.json --output-dir=downloads
+
+# Check it works
+python import_config.py identify downloads/
+
+# Extract transactions
+python import_config.py extract downloads/ > transactions.beancount
+
+# View the result
+cat transactions.beancount
+```
+
+---
+
+## Using with Your Existing Beancount Ledger
+
+If you already have a Beancount ledger, here's how to integrate:
+
+### 1. Create your ledger file (`ledger.beancount`):
+
+```beancount
+; Commodity declarations
+1970-01-01 commodity ETH
+  name: "Ethereum"
+
+1970-01-01 commodity USDC
+  name: "USD Coin"
+
+; Account declarations
+2020-01-01 open Assets:Crypto:Ethereum:MainWallet ETH, USDC
+2020-01-01 open Assets:Crypto:Ethereum:MainWallet:ETH ETH
+2020-01-01 open Assets:Crypto:Ethereum:MainWallet:USDC USDC
+2020-01-01 open Expenses:Crypto:GasFees ETH
+2020-01-01 open Expenses:Crypto:Purchases
+2020-01-01 open Income:Crypto:Received
+
+; Include imported transactions
+include "ethereum-transactions.beancount"
+```
+
+### 2. Import with deduplication:
+
+When you have existing transactions, use `-e` to avoid duplicates:
+
+```bash
+python import_config.py extract -e ledger.beancount downloads/ > new-transactions.beancount
+```
+
+This skips any transactions that already exist in your ledger (matched by `txid`).
+
+### 3. Validate your ledger:
+
+```bash
+bean-check ledger.beancount
+```
+
+---
+
+## Tracking Multiple Wallets
+
+Add multiple addresses to your `account_map`:
+
+```json
+{
+    "name": "all-wallets",
+    "account_map": {
+        "0xWallet1Address": "Assets:Crypto:Ethereum:HotWallet",
+        "0xWallet2Address": "Assets:Crypto:Ethereum:ColdStorage",
+        "0xWallet3Address": "Assets:Crypto:Ethereum:DeFi"
+    },
+    "fee_account": "Expenses:Crypto:GasFees",
+    "expenses_account": "Expenses:Crypto:Other",
+    "income_account": "Income:Crypto:Other",
+    "block_explorer_api_url": "https://api.etherscan.io/api",
+    "block_explorer_api_key": "YOUR_API_KEY",
+    "block_explorer_api_request_delay": 0.25,
+    "base_currency": "ETH"
+}
+```
+
+When you transfer between your own wallets, the importer recognizes both addresses and creates proper transfers:
+
+```beancount
+2024-01-15 *
+  txid: "0x..."
+  Assets:Crypto:Ethereum:HotWallet:ETH     -1.0 ETH
+  Assets:Crypto:Ethereum:ColdStorage:ETH    1.0 ETH
+  Assets:Crypto:Ethereum:HotWallet:ETH     -0.001 ETH
+  Expenses:Crypto:GasFees                   0.001 ETH
+```
+
+---
+
+## Tracking ERC-20 Tokens (USDC, USDT, etc.)
+
+The importer automatically downloads ERC-20 token transfers. Use `currency_map` to customize how they appear:
+
+```json
+{
+    "name": "mainnet",
+    "account_map": {
+        "0xYourAddress": "Assets:Crypto:Ethereum:Main"
+    },
+    "fee_account": "Expenses:Crypto:GasFees",
+    "expenses_account": "Expenses:Crypto:Other",
+    "income_account": "Income:Crypto:Other",
+    "block_explorer_api_url": "https://api.etherscan.io/api",
+    "block_explorer_api_key": "YOUR_API_KEY",
+    "base_currency": "ETH",
+    "currency_map": {
+        "USDC": {
+            "commodity": "USDC",
+            "account_suffix": "USDC"
+        },
+        "USDT": {
+            "commodity": "USDT",
+            "account_suffix": "USDT"
+        },
+        "WETH": {
+            "commodity": "WETH",
+            "account_suffix": "WETH"
+        }
+    }
+}
+```
+
+This creates transactions like:
+
+```beancount
+2024-01-15 *
+  txid: "0x..."
+  Assets:Crypto:Ethereum:Main:USDC    -1000 USDC
+  Expenses:Crypto:Other                1000 USDC
+```
+
+---
+
+## Using Other Blockchains
+
+This tool works with any Etherscan-compatible API. Here are common ones:
+
+### Polygon (MATIC)
+
+```json
+{
+    "name": "polygon",
+    "account_map": {
+        "0xYourAddress": "Assets:Crypto:Polygon:Main"
+    },
+    "block_explorer_api_url": "https://api.polygonscan.com/api",
+    "block_explorer_api_key": "YOUR_POLYGONSCAN_KEY",
+    "base_currency": "MATIC",
+    ...
+}
+```
+
+### Arbitrum
+
+```json
+{
+    "name": "arbitrum",
+    "block_explorer_api_url": "https://api.arbiscan.io/api",
+    "block_explorer_api_key": "YOUR_ARBISCAN_KEY",
+    "base_currency": "ETH",
+    ...
+}
+```
+
+### Base
+
+```json
+{
+    "name": "base",
+    "block_explorer_api_url": "https://api.basescan.org/api",
+    "block_explorer_api_key": "YOUR_BASESCAN_KEY",
+    "base_currency": "ETH",
+    ...
+}
+```
+
+### Optimism
+
+```json
+{
+    "name": "optimism",
+    "block_explorer_api_url": "https://api-optimistic.etherscan.io/api",
+    "block_explorer_api_key": "YOUR_OPTIMISM_KEY",
+    "base_currency": "ETH",
+    ...
+}
+```
+
+---
+
+## Command Reference
+
+### Download Transactions
+
+```bash
+python -m beancount_ethereum --config=config.json --output-dir=downloads
+```
+
+Options:
+- `--config` / `-c`: Path to your config file
+- `--output-dir` / `-o`: Where to save the downloaded JSON
+
+### Identify Files
 
 ```bash
 python import_config.py identify downloads/
 ```
 
-### Step 4: Extract Transactions
+Shows which files the importer recognizes.
 
-Import transactions to Beancount format:
+### Extract Transactions
 
 ```bash
-# Output to stdout
+# Print to terminal
 python import_config.py extract downloads/
 
 # Save to file
-python import_config.py extract downloads/ > new_transactions.beancount
+python import_config.py extract downloads/ > output.beancount
 
 # Deduplicate against existing ledger
-python import_config.py extract -e ledger.beancount downloads/ > new_transactions.beancount
+python import_config.py extract -e ledger.beancount downloads/
 ```
 
-### Importer Options
-
-The `Importer` class accepts these parameters:
-
-```python
-beancount_ethereum.Importer(
-    config_path='config.json',  # Path to configuration file
-    max_delta=90,               # Only import transactions from last N days
-)
-```
-
-## Example Output
-
-The importer generates Beancount transactions like:
-
-```beancount
-2024-01-15 * "0x1234...5678"
-  txid: "0xabc123..."
-  Assets:Ethereum:Wallet1:ETH  -1.5 ETH
-  Expenses:Crypto:Other         1.5 ETH
-  Assets:Ethereum:Wallet1:ETH  -0.001 ETH
-  Expenses:Crypto:Fees          0.001 ETH
-```
-
-For transfers between known addresses:
-
-```beancount
-2024-01-15 *
-  txid: "0xdef456..."
-  Assets:Ethereum:Wallet1:ETH  -2.0 ETH
-  Assets:Ethereum:Wallet2:ETH   2.0 ETH
-  Assets:Ethereum:Wallet1:ETH  -0.0015 ETH
-  Expenses:Crypto:Fees          0.0015 ETH
-```
-
-## Testing
-
-Run the test suite:
-
-```bash
-# Install dev dependencies
-pip install -r requirements-dev.txt
-
-# Run tests
-PYTHONPATH=. pytest tests/ -v
-
-# Run tests with coverage
-PYTHONPATH=. pytest tests/ --cov=beancount_ethereum --cov-report=term-missing
-```
-
-## Development
-
-### Project Structure
-
-```
-beancount-ethereum-importer/
-├── beancount_ethereum/
-│   ├── __init__.py       # Package exports
-│   ├── __main__.py       # CLI entry point
-│   ├── downloader.py     # Etherscan API client
-│   └── importer.py       # Beangulp importer
-├── tests/
-│   ├── conftest.py       # Pytest fixtures
-│   ├── test_downloader.py
-│   └── test_importer.py
-├── config.json.example
-├── import_config.py.example
-├── requirements.txt
-├── requirements-dev.txt
-└── setup.py
-```
-
-### Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Run the tests
-5. Submit a pull request
+---
 
 ## Troubleshooting
 
 ### "No transactions found"
 
-- Verify your wallet address is correct
-- Check if the API key is valid
-- Ensure the block explorer URL is correct for your chain
+1. Check your wallet address is correct (copy directly from Etherscan)
+2. Verify your API key works by visiting: `https://api.etherscan.io/api?module=account&action=txlist&address=YOUR_ADDRESS&apikey=YOUR_KEY`
+3. Make sure `max_delta` is large enough to include your transactions
 
-### Rate Limiting
+### "Rate limit exceeded"
 
-If you get rate limit errors, increase `block_explorer_api_request_delay`:
+Increase the delay between API requests:
 
 ```json
 {
@@ -287,34 +497,55 @@ If you get rate limit errors, increase `block_explorer_api_request_delay`:
 }
 ```
 
-### Missing Token Transfers
+Free Etherscan accounts allow 5 requests/second, so 0.25 seconds delay is safe.
 
-Some tokens may not appear if:
-- They use non-standard transfer events
-- The block explorer doesn't index them
+### Old transactions not appearing
 
-### Old Transactions Not Appearing
-
-By default, only transactions from the last 90 days are imported. Adjust `max_delta`:
+The importer only imports transactions from the last 90 days by default. Increase `max_delta`:
 
 ```python
-beancount_ethereum.Importer(config_path='config.json', max_delta=365)
+beancount_ethereum.Importer(config_path='config.json', max_delta=3650)  # 10 years
 ```
 
-## Deploy
+### Transactions appearing twice
 
-Deploy `beancount-ethereum` to PyPI:
+Use the `-e` flag to deduplicate:
 
 ```bash
-make deploy
+python import_config.py extract -e ledger.beancount downloads/
 ```
+
+---
+
+## Configuration Reference
+
+| Option | Required | Default | Description |
+|--------|----------|---------|-------------|
+| `name` | Yes | - | Output filename (e.g., `"mainnet"` → `mainnet.json`) |
+| `default_account` | No | `"Assets:Crypto:ETH"` | Default account for beangulp |
+| `account_map` | Yes | - | Wallet address → Beancount account mapping |
+| `fee_account` | Yes | - | Account for gas fees |
+| `expenses_account` | Yes | - | Account for outgoing transactions |
+| `income_account` | Yes | - | Account for incoming transactions |
+| `block_explorer_api_url` | Yes | - | API endpoint URL |
+| `block_explorer_api_key` | No | - | API key (required for Etherscan) |
+| `block_explorer_api_request_delay` | No | `0` | Delay between API calls (seconds) |
+| `base_currency` | No | `"ETH"` | Native currency symbol |
+| `currency_map` | No | - | Token symbol mappings |
+
+---
+
+## Testing
+
+Run the test suite to verify everything works:
+
+```bash
+pip install pytest pytest-cov
+PYTHONPATH=. pytest tests/ -v
+```
+
+---
 
 ## License
 
 GPL-3.0
-
-## Credits
-
-- Original author: [xuhcc](https://github.com/xuhcc)
-- Beancount: [Martin Blais](https://github.com/blais)
-- Beangulp: [Beancount contributors](https://github.com/beancount/beangulp)

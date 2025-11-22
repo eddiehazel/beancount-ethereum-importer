@@ -1,25 +1,101 @@
 #!/usr/bin/env python3
-"""Beangulp import configuration for beancount-ethereum.
-
-Usage:
-    python import_config.py identify downloads/
-    python import_config.py extract downloads/ > transactions.beancount
-    python import_config.py extract -e ledger.beancount downloads/ > transactions.beancount
 """
+Beangulp Import Configuration for Ethereum Transactions
+========================================================
+
+This script uses beangulp to import Ethereum transactions into Beancount format.
+
+WHAT IS BEANGULP?
+-----------------
+Beangulp is the official tool for importing external data into Beancount.
+It replaces the old `bean-extract` and `bean-identify` commands from Beancount 2.x.
+
+Instead of running separate commands, you run this script directly:
+    python import_config.py <command> <arguments>
+
+AVAILABLE COMMANDS
+------------------
+1. identify - Check which files the importer recognizes:
+       python import_config.py identify downloads/
+
+2. extract - Convert transactions to Beancount format:
+       python import_config.py extract downloads/
+
+3. extract with deduplication - Skip transactions already in your ledger:
+       python import_config.py extract -e ledger.beancount downloads/
+
+SETUP INSTRUCTIONS
+------------------
+1. Make sure you have a config.json file (copy from config.json.example)
+2. Download your transactions first:
+       python -m beancount_ethereum --config=config.json --output-dir=downloads
+3. Then run this script to import them
+
+CUSTOMIZATION
+-------------
+- Change `config_path` to point to your configuration file
+- Change `max_delta` to control how far back to import (in days)
+  - max_delta=90 means import last 90 days (default)
+  - max_delta=365 means import last year
+  - max_delta=3650 means import last 10 years
+
+EXAMPLE OUTPUT
+--------------
+Running `python import_config.py extract downloads/` produces:
+
+    2024-01-15 * "0x1234..."
+      txid: "0xabc123..."
+      Assets:Crypto:Ethereum:Main:ETH    -1.5 ETH
+      Expenses:Crypto:Other               1.5 ETH
+      Assets:Crypto:Ethereum:Main:ETH    -0.002 ETH
+      Expenses:Crypto:GasFees             0.002 ETH
+"""
+
 import os
 import sys
 
-sys.path.append(os.path.dirname(os.path.realpath(__file__)))
+# Add current directory to Python path
+# This is needed when running without `pip install`
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 import beangulp
 import beancount_ethereum
 
-# Define your importers
+
+# =============================================================================
+# IMPORTER CONFIGURATION
+# =============================================================================
+
+# Create your importer(s) here
+# You can have multiple importers for different chains or wallets
+
 importers = [
-    beancount_ethereum.Importer(config_path='config.json'),
+    # Main Ethereum importer
+    beancount_ethereum.Importer(
+        config_path='config.json',  # Path to your configuration file
+        max_delta=365,              # Import transactions from the last 365 days
+    ),
+
+    # Example: Add more importers for other chains
+    # beancount_ethereum.Importer(
+    #     config_path='config-polygon.json',
+    #     max_delta=365,
+    # ),
+    # beancount_ethereum.Importer(
+    #     config_path='config-arbitrum.json',
+    #     max_delta=365,
+    # ),
 ]
 
-# Run the beangulp CLI if executed as a script
+
+# =============================================================================
+# RUN BEANGULP
+# =============================================================================
+
 if __name__ == '__main__':
+    # Create the beangulp Ingest instance with our importers
     ingest = beangulp.Ingest(importers)
+
+    # Run the command-line interface
+    # This handles: identify, extract, and other beangulp commands
     ingest()
